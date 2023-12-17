@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Body
 from typing import Annotated
-import smtplib
-from email.mime.text import MIMEText
+
+from ...utils.mail import send_notification
 
 router = APIRouter(
     prefix='/HL',
@@ -11,7 +11,6 @@ router = APIRouter(
 @router.get('/test')
 async def test_api():
     return {
-        'success': True,
         'detail': 'hi mail.'
     }
 
@@ -26,7 +25,10 @@ async def test_error():
 @router.post('/createPost')
 async def when_create_work(work: Annotated[dict, Body(description='creatorPost')]):
     print(work)
+    # 判斷方案類型 everyone? tiers?
+    # SELECT 作者-所有方案-訂閱者-email
+    # SELECT 作者-選擇方案-訂閱者-email
+    # 背景發送email
     return {
-        'success': True,
         'detail': work
     }
