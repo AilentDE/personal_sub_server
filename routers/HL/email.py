@@ -1,8 +1,10 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Body, Depends
 from typing import Annotated
 
-# from utils.mail import send_notification
+from models import UserData, Tier, UserSubscription
 from schema.settings import Settings
+from schema.mail import EmailSchema
+from schema.creatorPost import CreatorPostSchema
 from config.setting import get_settings
 from utils.mail import send_test
 
@@ -29,20 +31,19 @@ async def print_setting(settings: Annotated[Settings, Depends(get_settings)]):
     }
 
 @router.post('/test_mail')
-async def test_mail(target: Annotated[str, Body()] = 'print@moaideas.net'):
-    send_test(target)
+async def test_mail(target: Annotated[EmailSchema, Body()]):
+    send_test(target.email)
     return {
         'mailStatus': 'sending'
     }
 
-# 避免未來結構變更直接用dict接收body
 @router.post('/createPost')
-async def when_create_work(work: Annotated[dict, Body(description='creatorPost')]):
-    print(work)
+async def when_create_work(work: Annotated[CreatorPostSchema, Body(description='creatorPost')]):
+    print(work.visibility)
     # 判斷方案類型 everyone? tiers?
     # SELECT (作者)所有方案-訂閱者-email
     # SELECT (作者)選擇方案-訂閱者-email
     # 背景發送email
     return {
-        'detail': work
+        'detail': work.model_dump()
     }

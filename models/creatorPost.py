@@ -6,7 +6,7 @@ Base = declarative_base()
 class WorkData(Base):
     __tablename__ = 'Work'
 
-    workID = Column(String(225), primary_key=True)
+    workID = Column(String(225), primary_key=True, nullable=False)
     title = Column(NVARCHAR)
     depiction = Column(NVARCHAR)
     userID = Column(String(225))

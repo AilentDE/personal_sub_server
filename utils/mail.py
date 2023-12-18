@@ -16,6 +16,7 @@ def send_test(target_email:str):
     smtp.login(get_settings().smtp_user, get_settings().smtp_code)
     try:
         response = smtp.sendmail(get_settings().smtp_from, target_email, mail.as_string())
+        print(response)
     except Exception as error:
         print(f"{error}")
     finally:
