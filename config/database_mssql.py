@@ -2,11 +2,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-import os
-from dotenv import load_dotenv
-load_dotenv('../.env')
+from config.setting import get_settings
+setting = get_settings()
 
-engine = create_engine(os.getenv['mssqlStaging'])
+engine = create_engine(setting.mssql_url_staging)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
