@@ -2,6 +2,7 @@
 import aiosmtplib 
 from email.mime.text import MIMEText
 from config.setting import get_settings
+from dependencies.base import write_log
 
 def get_template(template_file:str='mail_template.txt')->str:
     with open(template_file, 'r', encoding='utf-8') as template:
@@ -21,7 +22,7 @@ async def send_test(target_email:str, msg:str=get_template(), subject:str='Notif
     try:
         await smtp.sendmail(get_settings().smtp_from, target_email, mail.as_string())
     except Exception as error:
-        print(f"{error}")
+        write_log(f"{error}", 'mail.txt')
     finally:
         await smtp.quit()
 
