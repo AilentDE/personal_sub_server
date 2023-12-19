@@ -31,10 +31,10 @@ async def print_setting(settings: Annotated[Settings, Depends(get_settings)]):
     }
 
 @router.post('/test_mail')
-async def test_mail(target: Annotated[EmailSchema, Body()]):
-    send_test(target.email)
+async def test_mail(background_tasks: BackgroundTasks, target: Annotated[EmailSchema, Body()]):
+    background_tasks.add_task(send_test, target.email)
     return {
-        'mailStatus': 'sending'
+        'detail': {'mailStatus': 'sending'}
     }
 
 @router.post('/createPost')

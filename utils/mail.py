@@ -1,26 +1,29 @@
-import smtplib
+# import smtplib
+import aiosmtplib 
 from email.mime.text import MIMEText
 from config.setting import get_settings
 
+def get_template(template_file:str='mail_template.txt')->str:
+    with open(template_file, 'r', encoding='utf-8') as template:
+        body = template.read()
+    return body
 
-def send_test(target_email:str):
-
-    with open('mail_template.txt', 'r', encoding='utf-8') as tmplate:
-        msg = tmplate.read()
+async def send_test(target_email:str, msg:str=get_template(), subject:str='Notification from clusters', isSSL:bool=False, isTLS:bool=False):
+    # mail
     mail = MIMEText(msg, 'html', 'utf-8')
-    mail['Subject'] = 'subject-test-mail'
-
-    # test smtp mail
-    smtp = smtplib.SMTP('smtp.gmail.com', 587)
-    smtp.starttls()
-    smtp.login(get_settings().smtp_user, get_settings().smtp_code)
+    mail['Subject'] = subject
+    # smtp
+    smtp = aiosmtplib.SMTP(hostname='smtp.gmail.com', port=587, use_tls=isSSL)
+    await smtp.connect()
+    if isTLS:
+        await smtp.starttls()
+    await smtp.login(get_settings().smtp_user, get_settings().smtp_code)
     try:
-        response = smtp.sendmail(get_settings().smtp_from, target_email, mail.as_string())
-        print(response)
+        await smtp.sendmail(get_settings().smtp_from, target_email, mail.as_string())
     except Exception as error:
         print(f"{error}")
     finally:
-        smtp.quit()
+        await smtp.quit()
 
 
 # def send_mail(target:str, body:str, feature: dict, subject:str = "來自可洛斯的通知"):
