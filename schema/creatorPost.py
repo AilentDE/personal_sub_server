@@ -3,20 +3,25 @@ from typing import List
 from datetime import datetime
 
 class CreatorPostSchema(BaseModel):
-    title: str
+    id: str
+    title: str|None
     layout: str
-    thumbnailAssetId: str
+    thumbnailAssetId: str|None
     thumbnailDisplayMode: str
-    excerpt: str
-    bodyHtml: str
+    excerpt: str|None
+    bodyHtml: str|None
     visibility: str
-    visibleTierIds: List[str]
+    visibleTierIds: List[str]|None
     creatorField: str
-    albumAssetIds: List[str]
-    attachmentAssetsIds: List[str]
-    externalMediaUrl: str
-    projectId: str
+    albumAssetIds: List[str]|None
+    attachmentAssetsIds: List[str]|None
+    externalMediaUrl: str|None
+    projectId: str|None
     isNsfw: bool
     isPinned: bool
-    tags: List[str]
-    publishedAt: datetime
+    tags: List[str]|None
+    publishedAt: datetime|None
+    projectTitle: str|None
+    creatorId: str|None = None
+    isRecommend: bool = False
+    viewsCount: int = 0
