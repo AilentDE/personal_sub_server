@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from config.setting import get_settings
 setting = get_settings()
 
-engine = create_engine(setting.mssql_url_staging)
+engine = create_engine(setting.mssql_url)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -14,8 +14,8 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
 router = APIRouter(
-    prefix='/HL',
-    tags=['HL']
+    prefix='/email',
+    tags=['email']
 )
 
 @router.get('/error')
@@ -31,11 +31,10 @@ async def print_setting(settings: Annotated[Settings, Depends(get_settings)]):
         'smtp_user': settings.smtp_user,
         'smtp_from': settings.smtp_from,
         'smtp_code': settings.smtp_code,
-        'mssql_url_production': settings.mssql_url_production,
-        'mssql_url_staging': settings.mssql_url_staging
+        'mssql_url': settings.mssql_url
     }
 
-@router.post('/test_mail')
+@router.post('/testMail')
 async def test_mail(background_tasks: BackgroundTasks, target: Annotated[EmailSchema, Body()]):
     background_tasks.add_task(send_test, target.email)
     return {

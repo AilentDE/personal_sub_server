@@ -1,11 +1,11 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 class Settings(BaseSettings):
-    smtp_user: str
-    smtp_from: str
-    smtp_code: str
-    mssql_url_production: str
-    mssql_url_staging: str
+    smtp_user: str = os.getenv('SMTP_USER')
+    smtp_from: str = os.getenv('SMTP_FROM')
+    smtp_code: str = os.getenv('SMTP_CODE')
+    mssql_url: str = os.getenv('MSSQL_URL')
 
-    model_config = SettingsConfigDict(env_file=".env") #Adjust if use AWS Lambda Enviroment
-    
+    # Cancel this if AWS Lambda Enviroment:
+    model_config = SettingsConfigDict(env_file=".env")

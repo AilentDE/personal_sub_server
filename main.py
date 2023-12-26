@@ -1,12 +1,13 @@
-from typing import Union
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers.HL import email
+from routers.email import email
+
+from mangum import Mangum
 
 app = FastAPI(
     title='clusters sub-Server',
-    version='0.0.1'
+    version='0.0.1',
+    docs_url='/v1/see_the_docs'
 )
 
 app.add_middleware(
@@ -19,13 +20,15 @@ app.add_middleware(
 
 app.include_router(email.router)
 
+handler = Mangum(app)
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+@app.get("/return/{message}")
+def read_item(message: str, q: str|None = None):
+    return {"detail": message, "q": q}
 
 # uvicorn main:app --reload
