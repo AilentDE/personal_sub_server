@@ -43,11 +43,6 @@ async def test_error():
 
 @app.get('/setting')
 async def print_setting(settings: Annotated[Settings, Depends(get_settings)]):
-    return {
-        'smtp_user': settings.smtp_user,
-        'smtp_from': settings.smtp_from,
-        'smtp_code': settings.smtp_code,
-        'mssql_url': settings.mssql_url
-    }
+    return settings.model_dump()
 
 # uvicorn main:app --reload

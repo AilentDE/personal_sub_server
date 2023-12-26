@@ -4,7 +4,7 @@ from models import UserData, Tier, UserSubscription
 from schema.mail import EmailSchema
 from schema.creatorPost import CreatorPostSchema
 from config.database_mssql import get_db
-from utils.mail import send_test, send_format_mail
+from utils.mail import send_test, send_format_mail, send_test_ses, send_format_mail_ses
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -16,7 +16,7 @@ router = APIRouter(
 
 @router.post('/testMail')
 async def test_mail(background_tasks: BackgroundTasks, target: Annotated[EmailSchema, Body()]):
-    background_tasks.add_task(send_test, target.email)
+    background_tasks.add_task(send_test_ses, target.email)
     return {
         'detail': {'mailStatus': 'sending'}
     }
@@ -76,7 +76,7 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
                 format_dict = mail_info.copy()
                 format_dict.update(tar)
                 print('to', format_dict)
-                background_tasks.add_task(send_format_mail, format_dict['user_email'], '[Clusters - 可洛斯·創作者集群] {} 的新作品通知！'.format(format_dict['creator_name']), format_dict)
+                background_tasks.add_task(send_format_mail_ses, format_dict['user_email'], '[Clusters - 可洛斯·創作者集群] {} 的新作品通知！'.format(format_dict['creator_name']), format_dict)
             return {
                 'detail': {'mailStatus': 'sending'}
             }
@@ -135,7 +135,7 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
                     format_dict = mail_info.copy()
                     format_dict.update(tar)
                     print('to', format_dict)
-                    background_tasks.add_task(send_format_mail, format_dict['user_email'], '[Clusters - 可洛斯·創作者集群] {} 的新作品通知！'.format(format_dict['creator_name']), format_dict)
+                    background_tasks.add_task(send_format_mail_ses, format_dict['user_email'], '[Clusters - 可洛斯·創作者集群] {} 的新作品通知！'.format(format_dict['creator_name']), format_dict)
                 return {
                     'detail': {'mailStatus': 'sending'}
                 }

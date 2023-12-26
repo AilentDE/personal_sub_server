@@ -2,8 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from config.setting import get_settings
-setting = get_settings()
+from config.setting import setting
 
 engine = create_engine(setting.mssql_url)
 
