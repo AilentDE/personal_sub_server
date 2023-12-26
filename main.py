@@ -1,6 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from routers.email import email
+from typing import Annotated
+from routers import email
+from schema.settings import Settings
+from config.setting import get_settings
 
 from mangum import Mangum
 
@@ -30,5 +33,21 @@ def read_root():
 @app.get("/return/{message}")
 def read_item(message: str, q: str|None = None):
     return {"detail": message, "q": q}
+
+@app.get('/error')
+async def test_error():
+    raise HTTPException(
+        status_code=400,
+        detail='error information.'
+    )
+
+@app.get('/setting')
+async def print_setting(settings: Annotated[Settings, Depends(get_settings)]):
+    return {
+        'smtp_user': settings.smtp_user,
+        'smtp_from': settings.smtp_from,
+        'smtp_code': settings.smtp_code,
+        'mssql_url': settings.mssql_url
+    }
 
 # uvicorn main:app --reload

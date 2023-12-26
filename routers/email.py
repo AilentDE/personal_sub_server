@@ -1,13 +1,9 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Path, Body, Depends
-from fastapi.encoders import jsonable_encoder
 from typing import Annotated
-
 from models import UserData, Tier, UserSubscription
-from schema.settings import Settings
 from schema.mail import EmailSchema
 from schema.creatorPost import CreatorPostSchema
 from config.database_mssql import get_db
-from config.setting import get_settings
 from utils.mail import send_test, send_format_mail
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -17,22 +13,6 @@ router = APIRouter(
     prefix='/email',
     tags=['email']
 )
-
-@router.get('/error')
-async def test_error():
-    raise HTTPException(
-        status_code=400,
-        detail='error information.'
-    )
-
-@router.get('/setting')
-async def print_setting(settings: Annotated[Settings, Depends(get_settings)]):
-    return {
-        'smtp_user': settings.smtp_user,
-        'smtp_from': settings.smtp_from,
-        'smtp_code': settings.smtp_code,
-        'mssql_url': settings.mssql_url
-    }
 
 @router.post('/testMail')
 async def test_mail(background_tasks: BackgroundTasks, target: Annotated[EmailSchema, Body()]):
