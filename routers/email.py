@@ -129,7 +129,7 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
                     results_tier_addon = db.execute(stmt_tier_addon).scalars().all()
                     results_tier_addon = list(map(lambda x: {'user_email': x.email, 'user_name': x.displayName}, results_tier_addon))
                 else:
-                    results_tier_normal = []
+                    results_tier_addon = []
                 results = [dict(t) for t in set([tuple(d.items()) for d in (results_tier_normal+results_tier_addon)])]
                 ## 寄出email
                 for tar in results:
