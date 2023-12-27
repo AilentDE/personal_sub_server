@@ -1,10 +1,11 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Path, Body, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Body, Depends
 from typing import Annotated
 from models import UserData, Tier, UserSubscription
 from schema.mail import EmailSchema
 from schema.creatorPost import CreatorPostSchema
 from config.database_mssql import get_db
-from utils.mail import send_test, send_format_mail, send_test_ses, send_format_mail_ses
+from dependencies.base import check_hmac
+from utils.mail import send_test_ses, send_format_mail_ses
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -22,7 +23,7 @@ async def test_mail(background_tasks: BackgroundTasks, target: Annotated[EmailSc
     }
 
 @router.post('/{creator_id}/createPost')
-async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Session, Depends(get_db)], creator_id: Annotated[str, Path(description='creatorId')], work: Annotated[CreatorPostSchema, Body(description='creatorPost body')]):
+async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Session, Depends(get_db)], creator_id: Annotated[str, Depends(check_hmac)], work: Annotated[CreatorPostSchema, Body(description='creatorPost body')]):
     print('作品類型: ', work.visibility)
     tw_datetime = datetime.utcnow() + timedelta(hours=8)
     print('現在時間: ', tw_datetime.strftime("%m-%y-%d %H:%M:%S"))

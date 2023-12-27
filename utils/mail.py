@@ -102,4 +102,5 @@ def send_format_mail_ses(target_email:str, subject:str, format_dict:dict, msg:st
             },
         }
     )
-    write_log_s3("Email Sent Successfully. MessageId is: " + response['MessageId'], 'logs/mail.txt')
+    # write_log_s3("Email Sent Successfully. MessageId is: " + response['MessageId'], 'logs/mail.txt')
+    # use CloudWatch logs for Exception

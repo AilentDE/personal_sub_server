@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     region_name: str = os.getenv('REGION_NAME')
     s3_bucket_name: str = os.getenv('S3_BUCKET_NAME')
     ses_sender: str = os.getenv('SES_SENDER')
+    hmac_key:str = os.getenv('HMAC_KEY')
 
     # Cancel this if AWS Lambda Enviroment:
     model_config = SettingsConfigDict(env_file=".env")

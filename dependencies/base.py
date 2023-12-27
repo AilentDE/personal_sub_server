@@ -1,3 +1,6 @@
+from fastapi import HTTPException, Path, Header
+import hmac
+from hashlib import sha1
 from datetime import datetime
 from config.aws_boto3 import boto3Client
 from config.setting import setting
@@ -20,3 +23,16 @@ def write_log_s3(message:str, file_key:str='logs/log.txt', bucket_name:str=setti
     updated_content = current_content + '\n' + f'[{datetime.utcnow()}] ' + message
 
     client.put_object(Bucket=bucket_name, Key=file_key, Body=updated_content)
+
+def check_hmac(
+        creator_id: str = Path(..., description="creator_id from path"),
+        x_signature: str = Header(..., description="Signature from header")
+        ):
+    key = setting.hmac_key
+    hmac_code = hmac.new(key.encode(), creator_id.encode(), sha1).hexdigest()
+    if hmac_code != x_signature:
+        raise HTTPException(
+            status_code=401,
+            detail='validation failed.'
+        )
+    return creator_id
