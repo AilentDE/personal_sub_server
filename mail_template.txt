@@ -188,10 +188,10 @@ table, td { color: #000000; } #u_body a { color: #0000ee; text-decoration: under
     <tr>
       <td style="overflow-wrap:break-word;word-break:break-word;padding:10px;font-family:arial,helvetica,sans-serif;" align="left">
         
-  <div style="font-size: 14px; line-height: 140%; text-align: left; word-wrap: break-word;">
+  <div style="font-size: 16px; line-height: 140%; text-align: left; word-wrap: break-word;">
     <p style="line-height: 140%;">通知你 <a href="{creator_url}" target="_blank">{creator_name}</a> 發布了新作品！</p>
-<p style="line-height: 140%;">點擊連結前往可洛斯查看作者的最新作品吧！</p>
-<p style="line-height: 140%;">    <a href="{work_url}" target="_blank">{work_title}</a></p>
+<p style="font-size: 16px; line-height: 140%;">點擊連結前往可洛斯查看作者的最新作品吧！</p>
+<p style="font-size: 16px; line-height: 140%;">在可洛斯確認：<a href="{work_url}" target="_blank">{work_title}</a></p>
   </div>
 
       </td>
