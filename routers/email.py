@@ -80,7 +80,7 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
             format_dict = mail_info.copy()
             format_dict.update(tar)
             print('to', format_dict)
-            background_tasks.add_task(send_format_mail_ses, format_dict['user_email'], '【Clusters - 可洛斯·創作者集群】[{}] 的新作品 [{}]'.format(format_dict['creator_name'], work.title), format_dict)
+            background_tasks.add_task(send_format_mail_ses, format_dict['user_email'], '【Clusters - 可洛斯·創作者集群】{} 的新作品 {}'.format(format_dict['creator_name'], work.title), format_dict)
         return {
             'detail': {'mailStatus': 'sending'}
         }
