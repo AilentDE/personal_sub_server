@@ -4,22 +4,22 @@ from datetime import datetime
 
 class CreatorPostSchema(BaseModel):
     id: str
-    title: str|None = '新作品'
+    title: str|None = None
     layout: str
-    thumbnailAssetId: str|None = ''
+    thumbnailAssetId: str|None = None
     thumbnailDisplayMode: str
-    excerpt: str|None = ''
-    bodyHtml: str|None = ''
+    excerpt: str = ''
+    bodyHtml: str = ''
     visibility: str
-    visibleTierIds: List[str]|None = []
+    visibleTierIds: List[str] = []
     creatorField: str
-    albumAssetIds: List[str]|None = []
-    attachmentAssetsIds: List[str]|None = ''
+    albumAssetIds: List[str] = []
+    attachmentAssetsIds: List[str] = ''
     externalMediaUrl: str|None = ''
     projectId: str|None = ''
     isNsfw: bool
     isPinned: bool
-    tags: List[str]|None = []
+    tags: List[str] = []
     publishedAt: datetime
     projectTitle: str|None = ''
     creatorId: str|None = None

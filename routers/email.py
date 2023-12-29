@@ -1,6 +1,6 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Body, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Body, Depends, Path
 from typing import Annotated
-from models import UserData, Tier, UserSubscription
+from models import UserData, Tier, UserSubscription, FileList
 from schema.mail import EmailSchema
 from schema.creatorPost import CreatorPostSchema
 from config.database_mssql import get_db
@@ -29,7 +29,7 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
     tw_datetime = datetime.utcnow() + timedelta(hours=8)
     print('現在時間: ', tw_datetime.strftime("%m-%y-%d %H:%M:%S"))
 
-    # 作者資訊
+    # 作者資訊&作品資訊
     stmt_creator = select(UserData).where(UserData.userID == creator_id)
     result = db.execute(stmt_creator).scalar_one_or_none()
     if result:
@@ -37,7 +37,10 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
             'creator_url': f'https://clusters.tw/profile/{result.userID}/works',
             'creator_name': result.displayName,
             'work_url': f'https://clusters.tw/creator-posts/{work.id}',
-            'work_title': f'{work.title if work.title!=""else"新作品"}'
+            'work_title': f'{work.title if work.title else "新作品"}',
+            'work_excerpt': f'{work.excerpt}',
+            'thumbnail_object': None,
+            'thumbnail_URL': 'https://clusters-open-assets.s3.ap-northeast-1.amazonaws.com/default-work-cover.jpg'
         }
         print('use', mail_info)
     else:
@@ -45,6 +48,13 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
             status_code=404,
             detail='creator not fount'
         )
+    
+    ## 取得封面資源
+    if work.thumbnailAssetId:
+        stmt = select(FileList).where(FileList.fileID == work.thumbnailAssetId)
+        result = db.execute(stmt).scalar_one_or_none()
+        if result:
+            mail_info['thumbnail_object'] = result.filePath + result.fileName
     
     work_datetime = work.publishedAt
     now_datetime = datetime.now(tz=pytz.UTC)
@@ -63,6 +73,7 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
         #     ).order_by(UserSubscription.userID.asc())
         # '''
 
+        ## 取得通知名單
         stmt = select(UserData).join(
             UserSubscription, UserData.userID == UserSubscription.userID
         ).where(
@@ -75,12 +86,13 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
         results = db.execute(stmt).scalars().all()
         results = list(map(lambda x: {'user_email': x.email, 'user_name': x.displayName}, results))
         results = [dict(t) for t in set([tuple(d.items()) for d in results])]
+
         ## 寄出email
         for tar in results:
             format_dict = mail_info.copy()
             format_dict.update(tar)
             print('to', format_dict)
-            background_tasks.add_task(send_format_mail_ses, format_dict['user_email'], '【Clusters - 可洛斯·創作者集群】{} 的新作品 {}'.format(format_dict['creator_name'], work.title), format_dict)
+            background_tasks.add_task(send_format_mail_ses, format_dict['user_email'], '【Clusters - 可洛斯·創作者集群】{} 的新作品 {}'.format(format_dict['creator_name'], format_dict['work_title']), format_dict)
         return {
             'detail': {'mailStatus': 'sending'}
         }
