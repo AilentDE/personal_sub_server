@@ -78,7 +78,7 @@ def send_test_ses(target_email:str, msg:str=get_template('templates/when_create_
 def send_format_mail_ses(target_email:str, subject:str, format_dict:dict, msg:str=get_template('templates/when_create_work.html')):
     # 處理作品封面圖片連結
     if format_dict['thumbnail_object']:
-        thumbnail_url = create_presigned_url(setting.s3_bucket_name, format_dict['thumbnail_object'], 604800)
+        thumbnail_url = create_presigned_url('clusters-assets-bucket', format_dict['thumbnail_object'], 604800)
         if thumbnail_url:
             format_dict['thumbnail_URL'] = thumbnail_url
 
