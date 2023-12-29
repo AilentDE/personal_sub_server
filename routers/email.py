@@ -53,8 +53,11 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
     if work.thumbnailAssetId:
         stmt = select(FileList).where(FileList.fileID == work.thumbnailAssetId)
         result = db.execute(stmt).scalar_one_or_none()
+        ### 資料庫路徑文字處理
+        filePath = result.filePath
+        filePath = filePath.replace("\\", "/")
         if result:
-            mail_info['thumbnail_object'] = result.filePath + result.fileName
+            mail_info['thumbnail_object'] = filePath[1:] + result.fileName
     
     work_datetime = work.publishedAt
     now_datetime = datetime.now(tz=pytz.UTC)
