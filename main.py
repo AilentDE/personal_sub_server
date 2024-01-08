@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
 from routers import email
 from schema.settings import Settings
-from config.setting import get_settings
+from config.setting import get_settings, setting
 
 from mangum import Mangum
 
@@ -15,7 +15,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[setting.allow_origins],
     allow_credentials=True,
     allow_methods=['GET', 'POST', 'PUT', 'DELETE'],
     allow_headers=["*"],
