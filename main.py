@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Body
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
-from routers import email
+from routers import email, aws_tools
 from schema.settings import Settings
 from config.setting import get_settings, setting
 
@@ -22,17 +22,13 @@ app.add_middleware(
 )
 
 app.include_router(email.router)
+app.include_router(aws_tools.router)
 
 handler = Mangum(app)
 
 @app.get("/")
-def read_root():
+def test_ok():
     return {"Hello": "World"}
-
-
-@app.get("/return/{message}")
-def read_item(message: str, q: str|None = None):
-    return {"detail": message, "q": q}
 
 @app.get('/error')
 async def test_error():
@@ -41,8 +37,14 @@ async def test_error():
         detail='error information.'
     )
 
-@app.get('/setting')
-async def print_setting(settings: Annotated[Settings, Depends(get_settings)]):
-    return settings.model_dump()
+@app.post('/setting')
+async def print_setting(settings: Annotated[Settings, Depends(get_settings)], check_key: Annotated[dict, Body()]):
+    if check_key['hmac_key'] == settings.hmac_key:
+        return settings.model_dump()
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail='key fail.'
+        )
 
 # uvicorn main:app --reload

@@ -5,7 +5,7 @@ from schema.mail import EmailSchema
 from schema.creatorPost import CreatorPostSchema
 from config.database_mssql import get_db
 from dependencies.base import check_hmac
-from utils.mail import send_test_ses, send_format_mail_ses
+from utils.aws_tool import send_test_ses, send_format_mail_ses
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
@@ -53,10 +53,10 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
     if work.thumbnailAssetId:
         stmt = select(FileList).where(FileList.fileID == work.thumbnailAssetId)
         result = db.execute(stmt).scalar_one_or_none()
-        ### 資料庫路徑文字處理
-        filePath = result.filePath
-        filePath = filePath.replace("\\", "/")
         if result:
+            ### 資料庫路徑文字處理
+            filePath = result.filePath
+            filePath = filePath.replace("\\", "/")
             mail_info['thumbnail_object'] = filePath[1:] + result.fileName
     
     work_datetime = work.publishedAt

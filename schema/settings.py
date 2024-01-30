@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     aws_access_key_id: str = os.getenv('AWS_ACCESS_KEY_ID') #lambda_default
     aws_secret_access_key: str = os.getenv('AWS_SECRET_ACCESS_KEY') #lambda_default
     aws_session_token: str = os.getenv('AWS_SESSION_TOKEN') #lambda_default
+    role_aws_key:str = os.getenv('ROLE_AWS_KEY')
+    role_aws_secret:str = os.getenv('ROLE_AWS_SECRET')
     region_name: str = os.getenv('REGION_NAME')
     s3_bucket_name: str = os.getenv('S3_BUCKET_NAME')
     ses_sender: str = os.getenv('SES_SENDER')
