@@ -24,6 +24,12 @@ app.add_middleware(
 app.include_router(email.router)
 app.include_router(aws_tools.router)
 
+from routers.discdordClusters import session
+
+subapi = FastAPI()
+subapi.include_router(session.router)
+app.mount('/discordClusters', subapi)
+
 handler = Mangum(app)
 
 @app.get("/")

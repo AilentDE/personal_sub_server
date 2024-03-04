@@ -16,7 +16,4 @@ def boto3Client(service:str='s3'):
         aws_secret_access_key = setting.role_aws_secret,
         region_name=setting.region_name
     )
-    try:
-        return client
-    finally:
-        client.close()
+    return client

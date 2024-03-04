@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     ses_sender: str = os.getenv('SES_SENDER')
     hmac_key:str = os.getenv('HMAC_KEY')
     allow_origins:str = os.getenv('ALLOW_ORIGINS')
+    discord_client: str = os.getenv('DISCORD_CLIENT')
+    discord_secret: str = os.getenv('DISCORD_SECRET')
+    bot_token: str = os.getenv('BOT_TOKEN')
 
     # Cancel this if AWS Lambda Enviroment:
     model_config = SettingsConfigDict(env_file=".env")
