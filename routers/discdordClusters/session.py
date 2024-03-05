@@ -7,6 +7,7 @@ from config.setting import setting
 from schema.userData import UserData
 from schema.discordOAuth import discordOauthSchema
 from utils.encode_tool import encode_base64, decode_base64, hash_sha1
+from utils.discord_api import exchange_token, get_discord_user_data
 import urllib
 
 router = APIRouter(
@@ -58,16 +59,88 @@ async def sign_in_clusters_user(discord_oauth: Annotated[discordOauthSchema, Bod
             status_code=status.HTTP_404_NOT_FOUND,
             detail='User not found.'
         )
-    else:
-        clusters_user_data = result['Items'][0]['clustersUserData']
-        if hash_sha1(clusters_user_data['email']) != signature:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail='Signature validation failed.'
-            )
+    clusters_user_data = result['Items'][0]['clustersUserData']
+    if hash_sha1(clusters_user_data['email']) != signature:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Signature validation failed.'
+        )
     
     return clusters_user_data
 
 @router.post('/discord')
-async def sign_in_discord_user():
-    return
+async def sign_in_discord_user(discord_oauth: Annotated[discordOauthSchema, Body()]):
+    # user
+    user_table = dynamodb().table('discordClusters-userData')
+
+    clusters_user_id, signature = decode_base64(discord_oauth.state).split('|')
+    result = user_table.query(
+        KeyConditionExpression=Key('clustersUserId').eq(f'clusters#{clusters_user_id}')
+    )
+    if len(result['Items']) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='User not found.'
+        )
+    if hash_sha1(result['Items'][0]['clustersUserData']['email']) != signature:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Signature validation failed.'
+        )
+    clusters_user_data = result['Items'][0]
+
+    discord = exchange_token(discord_oauth.code)
+    discord_user_data = get_discord_user_data(discord['access_token'])
+    response = user_table.put_item(Item={
+        'clustersUserId': f'clusters#{clusters_user_id}',
+        'discordUserId': f'discord#{discord_user_data["id"]}',
+        'clustersUserData': clusters_user_data,
+        'discordUserData': discord_user_data
+    })
+    null_data = list(filter(lambda x: "#null" in x["discordUserId"], result['Items']))
+    if len(null_data) !=0:
+        response = user_table.delete_item(Key={
+            'clustersUserId': f'clusters#{clusters_user_id}',
+            'discordUserId': f'discord#{discord_user_data["id"]}'
+        })
+    
+    # guild
+    if 'guild' in discord.keys():
+        guild_table = dynamodb().table('discordClusters-discordGuild')
+
+        guild = discord['guild']
+        if guild['owner_id'] != discord_user_data["id"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Must select own guild.'
+            )
+        result = guild_table.query(
+            KeyConditionExpression=Key('guildId').begins_with('guildId') & Key('userType').eq(f'owner#{discord_user_data["id"]}')
+        )
+        if len(result['Items']) != 0 and result['Items'][0]['guildId'] != f'guild#{guild["id"]}':
+            # bot leave old guild
+            # create new guild
+            response = guild_table.put_item(Item={
+                'guildId': f'guild#{guild["id"]}',
+                'userType': f'owner#{discord_user_data["id"]}',
+                'guild': guild,
+                'tierRole': {}
+            })
+            # delete old guild
+            response = guild_table.delete_item(Key={
+                'guildId': f'guild#{result["Items"][0]["guildId"]}',
+                'userType': f'owner#{discord_user_data["id"]}'
+            })
+        elif len(result['Items']) !=0:
+            # update guild
+            pass
+        else:
+            # create new guild
+            response = guild_table.put_item(Item={
+                'guildId': f'guild#{guild["id"]}',
+                'userType': f'owner#{discord_user_data["id"]}',
+                'guild': guild,
+                'tierRole': {}
+            })
+
+    return discord_user_data
