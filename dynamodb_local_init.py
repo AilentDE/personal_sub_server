@@ -15,6 +15,7 @@ def create_table(dyn_resource=None):
             region_name='ap-northeast-1'
         )
 
+    # user
     user_table_name = "discordClusters-userData"
     params = {
         "TableName": user_table_name,
@@ -38,26 +39,27 @@ def create_table(dyn_resource=None):
         else:
             raise
     
-    user_table_name = "discordClusters-discordGuild"
+    # guild
+    guild_table_name = "discordClusters-discordGuild"
     params = {
-        "TableName": user_table_name,
+        "TableName": guild_table_name,
         "KeySchema": [
-            {"AttributeName": "guildId", "KeyType": "HASH"},
-            {"AttributeName": "userType", "KeyType": "RANGE"},
+            {"AttributeName": "guildOwner", "KeyType": "HASH"},
+            {"AttributeName": "itemType", "KeyType": "RANGE"},
         ],
         "AttributeDefinitions": [
-            {"AttributeName": "guildId", "AttributeType": "S"},
-            {"AttributeName": "userType", "AttributeType": "S"},
+            {"AttributeName": "guildOwner", "AttributeType": "S"},
+            {"AttributeName": "itemType", "AttributeType": "S"},
         ],
         "ProvisionedThroughput": {"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
     }
     try:
         table = dyn_resource.create_table(**params)
-        print(f"Creating {user_table_name}...")
+        print(f"Creating {guild_table_name}...")
         print(table)
     except ClientError as e:
         if e.response['Error']['Code'] == 'ResourceInUseException':
-            print(f"Table {user_table_name} already exists.")
+            print(f"Table {guild_table_name} already exists.")
         else:
             raise
     
@@ -65,5 +67,5 @@ def create_table(dyn_resource=None):
 
 
 if __name__ == "__main__":
-    dax_table = create_table()
-    print(f"{dax_table}")
+    create_state = create_table()
+    print(f"{create_state}")
