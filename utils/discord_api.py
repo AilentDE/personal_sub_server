@@ -23,9 +23,9 @@ def exchange_token(code: str):
             detail='This is an error for the OAuth code. Please try using local data or retry signing in.'
         )
 
-def get_discord_user_data(token: str):
+def get_discord_user_data(access_token: str):
     headers = {
-        'Authorization': 'Bearer ' + token
+        'Authorization': 'Bearer ' + access_token
     }
     r = requests.get(base_url + '/users/@me', headers=headers)
     if r.status_code == 200:
@@ -35,3 +35,10 @@ def get_discord_user_data(token: str):
             status_code=r.status_code,
             detail='Unable to retrieve user information.'
         )
+
+def bot_leave_guild(guild_id: str):
+    headers = {
+        'Authorization': f'Bot {setting.bot_token}'
+    }
+    response = requests.delete(base_url + f'/users/@me/guilds/{guild_id}', headers=headers)
+    return

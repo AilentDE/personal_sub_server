@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     discord_client: str = os.getenv('DISCORD_CLIENT')
     discord_secret: str = os.getenv('DISCORD_SECRET')
     bot_token: str = os.getenv('BOT_TOKEN')
+    secret_key: str = os.getenv('SECRET_KEY')
+    algorithm: str = os.getenv('ALGORITHM')
 
     # Cancel this if AWS Lambda Enviroment:
     model_config = SettingsConfigDict(env_file=".env")

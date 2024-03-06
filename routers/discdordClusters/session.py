@@ -1,13 +1,13 @@
-from fastapi import APIRouter, status, HTTPException, Body, Depends
+from fastapi import APIRouter, status, HTTPException, Body, Depends, BackgroundTasks
 from typing import Annotated
 from dependencies.base import check_hmac
-from config.database_mssql import get_db
 from config.database_dyanamodb import dynamodb, Key
 from config.setting import setting
 from schema.userData import UserData
 from schema.discordOAuth import discordOauthSchema
 from utils.encode_tool import encode_base64, decode_base64, hash_sha1
-from utils.discord_api import exchange_token, get_discord_user_data
+from utils.discord_api import exchange_token, get_discord_user_data, bot_leave_guild
+from utils.jwt import encode_jws
 import urllib
 
 router = APIRouter(
@@ -33,7 +33,9 @@ async def request_login_url(userData: Annotated[UserData, Body()], clusters_user
     params = {
         'response_type': 'code',
         'client_id': setting.discord_client,
-        'scope': 'identify email',
+        # 'scope': 'identify email',
+        'scope': 'bot',
+        'permissions': 8,
         'state': state,
         'redirect_uri': 'https://staging.clusters.tw',
         'prompt': 'consent'
@@ -69,7 +71,7 @@ async def sign_in_clusters_user(discord_oauth: Annotated[discordOauthSchema, Bod
     return clusters_user_data
 
 @router.post('/discord')
-async def sign_in_discord_user(discord_oauth: Annotated[discordOauthSchema, Body()]):
+async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth: Annotated[discordOauthSchema, Body()]):
     # user
     user_table = dynamodb().table('discordClusters-userData')
 
@@ -115,32 +117,54 @@ async def sign_in_discord_user(discord_oauth: Annotated[discordOauthSchema, Body
                 detail='Must select own guild.'
             )
         result = guild_table.query(
-            KeyConditionExpression=Key('guildId').begins_with('guildId') & Key('userType').eq(f'owner#{discord_user_data["id"]}')
+            KeyConditionExpression=Key('guildOwner').eq(f'discord#{discord_user_data["id"]}') & Key('itemType').begins_with('guild#')
         )
-        if len(result['Items']) != 0 and result['Items'][0]['guildId'] != f'guild#{guild["id"]}':
+        if len(result['Items']) != 0 and result['Items'][0]['itemType'] != f'guild#{guild["id"]}':
             # bot leave old guild
-            # create new guild
+            background_tasks.add_task(bot_leave_guild, result['Items'][0]['itemType'].split('#')[1])
+            # create new guild item
             response = guild_table.put_item(Item={
-                'guildId': f'guild#{guild["id"]}',
-                'userType': f'owner#{discord_user_data["id"]}',
+                'guildOwner': f'discord#{discord_user_data["id"]}',
+                'itemType': f'guild#{guild['id']}',
                 'guild': guild,
                 'tierRole': {}
             })
-            # delete old guild
+            # delete old guild item
             response = guild_table.delete_item(Key={
-                'guildId': f'guild#{result["Items"][0]["guildId"]}',
-                'userType': f'owner#{discord_user_data["id"]}'
+                'guildOwner': f'discord#{discord_user_data["id"]}',
+                'itemType': f'guild#{result["Items"][0]["itemType"]}'
             })
         elif len(result['Items']) !=0:
-            # update guild
-            pass
+            # update guild item
+            response = guild_table.update_item(
+                Key={
+                    'guildOwner': f'discord#{discord_user_data["id"]}',
+                    'itemType': f'guild#{guild['id']}',
+                },
+                UpdateExpression='SET #guild = :guild',
+                ExpressionAttributeNames={
+                    '#guild': 'guild'
+                },
+                ExpressionAttributeValues={
+                    ':guild': guild
+                },
+                ReturnValues='UPDATED_NEW'
+            )
         else:
-            # create new guild
+            # create new guild item
             response = guild_table.put_item(Item={
-                'guildId': f'guild#{guild["id"]}',
-                'userType': f'owner#{discord_user_data["id"]}',
+                'guildOwner': f'discord#{discord_user_data["id"]}',
+                'itemType': f'guild#{guild['id']}',
                 'guild': guild,
                 'tierRole': {}
             })
+    
+    access_token = encode_jws({
+        'primaryUserId': clusters_user_id,
+        'secondaryUserId': discord_user_data['id']
+    })
 
-    return discord_user_data
+    return {
+        'accessToken': access_token,
+        'disocrdUser': discord_user_data
+    }
