@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-# from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from jose import JWTError, jwt
 from config.setting import setting
 
@@ -13,6 +13,9 @@ def encode_jws(data:dict, expire_delta_hours:int=1):
     #     'exp': exp,
     #     'expISO': expISO
     # })
+    data.update({
+        'createdAt': datetime.now(tz=timezone.utc).isoformat().replace('+00:00', 'Z')
+    })
     encoded_jws = jwt.encode(
         data,
         setting.secret_key,
