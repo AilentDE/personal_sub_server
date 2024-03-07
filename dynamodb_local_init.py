@@ -20,12 +20,12 @@ def create_table(dyn_resource=None):
     params = {
         "TableName": user_table_name,
         "KeySchema": [
-            {"AttributeName": "clustersUserId", "KeyType": "HASH"},
-            {"AttributeName": "discordUserId", "KeyType": "RANGE"},
+            {"AttributeName": "accountType", "KeyType": "HASH"},
+            {"AttributeName": "bindAccount", "KeyType": "RANGE"},
         ],
         "AttributeDefinitions": [
-            {"AttributeName": "clustersUserId", "AttributeType": "S"},
-            {"AttributeName": "discordUserId", "AttributeType": "S"},
+            {"AttributeName": "accountType", "AttributeType": "S"},
+            {"AttributeName": "bindAccount", "AttributeType": "S"},
         ],
         "ProvisionedThroughput": {"ReadCapacityUnits": 10, "WriteCapacityUnits": 10},
     }
