@@ -4,7 +4,7 @@ from typing_extensions import Annotated
 from decimal import Decimal
 # from datetime import datetime
 
-class UserData(BaseModel):
+class UserDataSchema(BaseModel):
     id: str
     displayName: str
     tel: str|None

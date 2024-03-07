@@ -3,7 +3,7 @@ from typing import Annotated
 from dependencies.base import check_hmac
 from config.database_dyanamodb import dynamodb, Key
 from config.setting import setting
-from schema.userData import UserData
+from schema.userData import UserDataSchema
 from schema.discordOAuth import discordOauthSchema
 from utils.encode_tool import encode_base64, decode_base64, hash_sha1
 from utils.discord_api import exchange_token, get_discord_user_data, bot_leave_guild
@@ -15,17 +15,17 @@ router = APIRouter(
 )
 
 @router.post('/signIn/{creator_id}')
-async def request_login_url(userData: Annotated[UserData, Body()], clusters_user_id: Annotated[str, Depends(check_hmac)]):
+async def request_login_url(userData: Annotated[UserDataSchema, Body()], clusters_user_id: Annotated[str, Depends(check_hmac)]):
     user_table = dynamodb().table('discordClusters-userData')
 
     result = user_table.query(
-        KeyConditionExpression=Key('clustersUserId').eq(f'clusters#{clusters_user_id}')
+        KeyConditionExpression=Key('accountType').eq(f'clusters#{clusters_user_id}')
     )
-    discordUserId = 'discord#null' if len(result['Items']) == 0 else result['Items'][0]['discordUserId']
+    bind_account = 'discord#null' if len(result['Items']) == 0 else result['Items'][0]['bindAccount']
     response = user_table.put_item(Item={
-        'clustersUserId': f'clusters#{clusters_user_id}',
-        'discordUserId': discordUserId,
-        'clustersUserData': userData.model_dump()
+        'accountType': f'clusters#{clusters_user_id}',
+        'bindAccount': bind_account,
+        **userData.model_dump()
     })
     
     base_url = 'https://discord.com'
@@ -33,9 +33,9 @@ async def request_login_url(userData: Annotated[UserData, Body()], clusters_user
     params = {
         'response_type': 'code',
         'client_id': setting.discord_client,
-        # 'scope': 'identify email',
-        'scope': 'bot',
-        'permissions': 8,
+        'scope': 'identify email',
+        # 'scope': 'bot',
+        # 'permissions': 8,
         'state': state,
         'redirect_uri': 'https://staging.clusters.tw',
         'prompt': 'consent'
@@ -54,21 +54,23 @@ async def sign_in_clusters_user(discord_oauth: Annotated[discordOauthSchema, Bod
 
     clusters_user_id, signature = decode_base64(discord_oauth.state).split('|')
     result = user_table.query(
-        KeyConditionExpression=Key('clustersUserId').eq(f'clusters#{clusters_user_id}')
+        KeyConditionExpression=Key('accountType').eq(f'clusters#{clusters_user_id}')
     )
     if len(result['Items']) == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='User not found.'
         )
-    clusters_user_data = result['Items'][0]['clustersUserData']
+    clusters_user_data = result['Items'][0]
     if hash_sha1(clusters_user_data['email']) != signature:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Signature validation failed.'
         )
     
-    return clusters_user_data
+    return {
+        "clustersUser": clusters_user_data
+    }
 
 @router.post('/discord')
 async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth: Annotated[discordOauthSchema, Body()]):
@@ -77,33 +79,39 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
 
     clusters_user_id, signature = decode_base64(discord_oauth.state).split('|')
     result = user_table.query(
-        KeyConditionExpression=Key('clustersUserId').eq(f'clusters#{clusters_user_id}')
+        KeyConditionExpression=Key('accountType').eq(f'clusters#{clusters_user_id}')
     )
     if len(result['Items']) == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail='User not found.'
         )
-    if hash_sha1(result['Items'][0]['clustersUserData']['email']) != signature:
+    clusters_user_data = result['Items'][0]
+    if hash_sha1(clusters_user_data['email']) != signature:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Signature validation failed.'
         )
-    clusters_user_data = result['Items'][0]
 
     discord = exchange_token(discord_oauth.code)
     discord_user_data = get_discord_user_data(discord['access_token'])
     response = user_table.put_item(Item={
-        'clustersUserId': f'clusters#{clusters_user_id}',
-        'discordUserId': f'discord#{discord_user_data["id"]}',
-        'clustersUserData': clusters_user_data,
-        'discordUserData': discord_user_data
+        'accountType': f'discord#{discord_user_data["id"]}',
+        'bindAccount': f'clusters#{clusters_user_id}',
+        **discord_user_data
     })
-    null_data = list(filter(lambda x: "#null" in x["discordUserId"], result['Items']))
+    null_data = list(filter(lambda x: "#null" in x["bindAccount"], result['Items']))
     if len(null_data) !=0:
+        update_clusters_user_data = clusters_user_data.copy()
+        del update_clusters_user_data['accountType'], update_clusters_user_data['bindAccount']
+        response = user_table.put_item(Item={
+            'accountType': f'clusters#{clusters_user_id}',
+            'bindAccount': f'discord#{discord_user_data["id"]}',
+            **update_clusters_user_data
+        })
         response = user_table.delete_item(Key={
-            'clustersUserId': f'clusters#{clusters_user_id}',
-            'discordUserId': f'discord#{discord_user_data["id"]}'
+            'accountType': f'clusters#{clusters_user_id}',
+            'bindAccount': 'discord#null'
         })
     
     # guild
@@ -126,6 +134,7 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
             response = guild_table.put_item(Item={
                 'guildOwner': f'discord#{discord_user_data["id"]}',
                 'itemType': f'guild#{guild['id']}',
+                'clustersUserId': clusters_user_id,
                 'guild': guild,
                 'tierRole': {}
             })
@@ -155,6 +164,7 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
             response = guild_table.put_item(Item={
                 'guildOwner': f'discord#{discord_user_data["id"]}',
                 'itemType': f'guild#{guild['id']}',
+                'clustersUserId': clusters_user_id,
                 'guild': guild,
                 'tierRole': {}
             })
@@ -165,6 +175,6 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
     })
 
     return {
-        'accessToken': access_token,
-        'disocrdUser': discord_user_data
+        "accessToken": access_token,
+        "disocrdUser": discord_user_data
     }
