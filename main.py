@@ -1,11 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends, Body
+from fastapi import FastAPI, HTTPException, Depends, Body, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
 from routers import email, aws_tools
 from schema.settings import Settings
 from config.setting import get_settings, setting
-
-from mangum import Mangum
+from schema.csrf import CsrfSettings
+from fastapi_csrf_protect import CsrfProtect
+from fastapi_csrf_protect.exceptions import CsrfProtectError
 
 app = FastAPI(
     title='clusters sub-Server',
@@ -24,13 +26,19 @@ app.add_middleware(
 app.include_router(email.router)
 app.include_router(aws_tools.router)
 
-from routers.discdordClusters import session, discord
+from routers.discdordClusters import session, discord, csrf
+from dependencies.csrf import depend_csrf
+@CsrfProtect.load_config
+def get_csrf_config():
+    return CsrfSettings()
 
-subapi = FastAPI()
+subapi = FastAPI(dependencies=[Depends(depend_csrf)])
+subapi.include_router(csrf.router)
 subapi.include_router(session.router)
 subapi.include_router(discord.router)
 app.mount('/discordClusters', subapi)
 
+from mangum import Mangum
 handler = Mangum(app)
 
 @app.get("/")
@@ -53,5 +61,8 @@ async def print_setting(settings: Annotated[Settings, Depends(get_settings)], ch
             status_code=400,
             detail='key fail.'
         )
-
+    
+@app.exception_handler(CsrfProtectError)
+def csrf_protect_exception_handler(request: Request, exc: CsrfProtectError):
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 # uvicorn main:app --reload
