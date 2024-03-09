@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Body, Request
+from fastapi import FastAPI, HTTPException, status, Depends, Body, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated
@@ -8,6 +8,8 @@ from config.setting import get_settings, setting
 from schema.csrf import CsrfSettings
 from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
+from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 
 app = FastAPI(
     title='clusters sub-Server',
@@ -17,7 +19,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[setting.allow_origins],
+    # allow_origins=[setting.allow_origins],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=['GET', 'POST', 'PUT', 'DELETE'],
     allow_headers=["*"],
@@ -65,4 +68,22 @@ async def print_setting(settings: Annotated[Settings, Depends(get_settings)], ch
 @app.exception_handler(CsrfProtectError)
 def csrf_protect_exception_handler(request: Request, exc: CsrfProtectError):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+
+@subapi.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: Exception):
+  return JSONResponse(
+      status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            'message': '輸入資料不正確',
+            'detail': f'{exc}'
+        }
+  )
+
+@subapi.exception_handler(status.HTTP_500_INTERNAL_SERVER_ERROR)
+async def internal_exception_handler(request: Request, exc: Exception):
+  raise HTTPException(
+      status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+      detail= f'{exc}'
+  )
+
 # uvicorn main:app --reload
