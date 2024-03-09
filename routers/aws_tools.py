@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Path
+from fastapi.responses import RedirectResponse
 from typing import Annotated
 from utils.aws_tool import create_presigned_url
 
@@ -13,3 +14,10 @@ async def test_mail(bucketName:Annotated[str, Body()], objectName:Annotated[str,
     return {
         'detail': {'presignedUrl': presigned_url}
     }
+
+@router.get('/presignedUrl/file/{userId}/{objectName}')
+async def get_presigned_url_for_avatar(userId:Annotated[str, Path()], objectName:Annotated[str, Path()]):
+    bucketName = 'clusters-assets-bucket'
+    objectName = userId + '/' + objectName + '/blob'
+    presigned_url = create_presigned_url(bucketName, objectName)
+    return RedirectResponse(presigned_url)
