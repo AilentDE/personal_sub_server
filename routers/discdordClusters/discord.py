@@ -45,6 +45,7 @@ async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payl
     if len(result_guild['Items']) == 0:
         return {
             "redirectURL": redirect_url,
+            "message": "未綁定discord伺服器，請至授權頁進行綁定。",
             "tiers": None,
             "guild": None,
             "tierRole": None
@@ -60,6 +61,7 @@ async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payl
         result_tier = db.execute(stmt).scalars().all()
         return {
             "redirectURL": redirect_url,
+            "message": "成功取得discord伺服器資料",
             "tiers": result_tier,
             "guild": result_guild['Items'][0]['guild'],
             "tierRole": result_guild['Items'][0]['tierRole']
@@ -94,5 +96,6 @@ async def update_tier_role(user_payload: Annotated[dict, Depends(oauth_check)], 
         ReturnValues='UPDATED_NEW'
     )
     return {
+        "message": "成功更新discord伺服器身分組設定",
         "tierRole": tierRole
     }

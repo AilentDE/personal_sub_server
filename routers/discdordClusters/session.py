@@ -37,7 +37,8 @@ async def request_login_url(userData: Annotated[UserDataSchema, Body()], cluster
         # 'scope': 'bot',
         # 'permissions': 8,
         'state': state,
-        'redirect_uri': 'https://staging.clusters.tw',
+        # 'redirect_uri': 'https://staging.clusters.tw',
+        'redirect_url': 'http://localhost:5173',
         'prompt': 'consent'
     }
     encoded_params = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
@@ -69,6 +70,7 @@ async def sign_in_clusters_user(discord_oauth: Annotated[discordOauthSchema, Bod
         )
     
     return {
+        "message": "成功登入clusters使用者",
         "clustersUser": clusters_user_data
     }
 
@@ -176,5 +178,6 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
 
     return {
         "accessToken": access_token,
+        "message": "成功登入discord使用者",
         "disocrdUser": discord_user_data
     }
