@@ -179,5 +179,5 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
     return {
         "accessToken": access_token,
         "message": "成功登入discord使用者",
-        "disocrdUser": discord_user_data
+        "discordUser": discord_user_data
     }
