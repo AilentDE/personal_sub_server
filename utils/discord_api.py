@@ -9,7 +9,7 @@ def exchange_token(code: str):
     data = {
         'grant_type': 'authorization_code',
         'code': f'{code}',
-        'redirect_uri': 'https://staging.clusters.tw'
+        'redirect_uri': setting.discord_redirect_uri
     }
     headers = {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -20,7 +20,7 @@ def exchange_token(code: str):
     else:
         raise HTTPException(
             status_code=r.status_code,
-            detail='This is an error for the OAuth code. Please try using local data or retry signing in.'
+            detail=f'This is an error for the OAuth code. Please try using local data or retry signing in. - {r.text}'
         )
 
 def get_discord_user_data(access_token: str):

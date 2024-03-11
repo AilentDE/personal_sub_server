@@ -34,11 +34,8 @@ async def request_login_url(userData: Annotated[UserDataSchema, Body()], cluster
         'response_type': 'code',
         'client_id': setting.discord_client,
         'scope': 'identify email',
-        # 'scope': 'bot',
-        # 'permissions': 8,
         'state': state,
-        # 'redirect_uri': 'https://staging.clusters.tw',
-        'redirect_url': 'http://localhost:5173',
+        'redirect_url': setting.discord_redirect_uri,
         'prompt': 'consent'
     }
     encoded_params = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)

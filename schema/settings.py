@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     allow_origins:str = os.getenv('ALLOW_ORIGINS')
     discord_client: str = os.getenv('DISCORD_CLIENT')
     discord_secret: str = os.getenv('DISCORD_SECRET')
+    discord_redirect_uri: str = os.getenv('DISCORD_REDIRECT_URI')
     bot_token: str = os.getenv('BOT_TOKEN')
     secret_key: str = os.getenv('SECRET_KEY')
     algorithm: str = os.getenv('ALGORITHM')

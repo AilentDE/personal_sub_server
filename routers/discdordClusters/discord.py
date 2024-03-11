@@ -36,7 +36,7 @@ async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payl
         'scope': 'bot',
         'permissions': 8,
         'state': state,
-        'redirect_uri': 'https://staging.clusters.tw',
+        'redirect_uri': setting.discord_redirect_uri,
         'prompt': 'consent'
     }
     encoded_params = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
@@ -46,9 +46,9 @@ async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payl
         return {
             "redirectURL": redirect_url,
             "message": "未綁定discord伺服器，請至授權頁進行綁定。",
-            "tiers": None,
-            "guild": None,
-            "tierRole": None
+            "tiers": [],
+            "guild": {},
+            "tierRole": {}
         }
     else:
         stmt = select(Tier).where(
