@@ -16,7 +16,7 @@ def write_log_s3(message:str, file_key:str='logs/log.txt', bucket_name:str=setti
     response = client.get_object(Bucket=bucket_name, Key=file_key)
     current_content = response['Body'].read().decode('utf-8')
 
-    updated_content = current_content + '\n' + f'[{datetime.utcnow()}] ' + message
+    updated_content = current_content + '\n' + f"[{datetime.utcnow()}] " + message
 
     client.put_object(Bucket=bucket_name, Key=file_key, Body=updated_content)
 

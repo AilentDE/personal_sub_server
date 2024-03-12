@@ -19,17 +19,17 @@ async def request_login_url(userData: Annotated[UserDataSchema, Body()], cluster
     user_table = dynamodb().table('discordClusters-userData')
 
     result = user_table.query(
-        KeyConditionExpression=Key('accountType').eq(f'clusters#{clusters_user_id}')
+        KeyConditionExpression=Key('accountType').eq(f"clusters#{clusters_user_id}")
     )
     bind_account = 'discord#null' if len(result['Items']) == 0 else result['Items'][0]['bindAccount']
     response = user_table.put_item(Item={
-        'accountType': f'clusters#{clusters_user_id}',
+        'accountType': f"clusters#{clusters_user_id}",
         'bindAccount': bind_account,
         **userData.model_dump()
     })
     
     base_url = 'https://discord.com'
-    state = encode_base64(f'{clusters_user_id}|{hash_sha1(userData.email)}')
+    state = encode_base64(f"{clusters_user_id}|{hash_sha1(userData.email)}")
     params = {
         'response_type': 'code',
         'client_id': setting.discord_client,
@@ -39,7 +39,7 @@ async def request_login_url(userData: Annotated[UserDataSchema, Body()], cluster
         'prompt': 'consent'
     }
     encoded_params = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
-    redirect_url = f'{base_url}/oauth2/authorize?' + encoded_params
+    redirect_url = f"{base_url}/oauth2/authorize?" + encoded_params
 
     return {
         "success": True,
@@ -52,7 +52,7 @@ async def sign_in_clusters_user(discord_oauth: Annotated[discordOauthSchema, Bod
 
     clusters_user_id, signature = decode_base64(discord_oauth.state).split('|')
     result = user_table.query(
-        KeyConditionExpression=Key('accountType').eq(f'clusters#{clusters_user_id}')
+        KeyConditionExpression=Key('accountType').eq(f"clusters#{clusters_user_id}")
     )
     if len(result['Items']) == 0:
         raise HTTPException(
@@ -78,7 +78,7 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
 
     clusters_user_id, signature = decode_base64(discord_oauth.state).split('|')
     result = user_table.query(
-        KeyConditionExpression=Key('accountType').eq(f'clusters#{clusters_user_id}')
+        KeyConditionExpression=Key('accountType').eq(f"clusters#{clusters_user_id}")
     )
     if len(result['Items']) == 0:
         raise HTTPException(
@@ -95,8 +95,8 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
     discord = exchange_token(discord_oauth.code)
     discord_user_data = get_discord_user_data(discord['access_token'])
     response = user_table.put_item(Item={
-        'accountType': f'discord#{discord_user_data["id"]}',
-        'bindAccount': f'clusters#{clusters_user_id}',
+        'accountType': f"discord#{discord_user_data['id']}",
+        'bindAccount': f"clusters#{clusters_user_id}",
         **discord_user_data
     })
     null_data = list(filter(lambda x: "#null" in x["bindAccount"], result['Items']))
@@ -104,12 +104,12 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
         update_clusters_user_data = clusters_user_data.copy()
         del update_clusters_user_data['accountType'], update_clusters_user_data['bindAccount']
         response = user_table.put_item(Item={
-            'accountType': f'clusters#{clusters_user_id}',
-            'bindAccount': f'discord#{discord_user_data["id"]}',
+            'accountType': f"clusters#{clusters_user_id}",
+            'bindAccount': f"discord#{discord_user_data['id']}",
             **update_clusters_user_data
         })
         response = user_table.delete_item(Key={
-            'accountType': f'clusters#{clusters_user_id}',
+            'accountType': f"clusters#{clusters_user_id}",
             'bindAccount': 'discord#null'
         })
     
@@ -124,30 +124,30 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
                 detail='Must select own guild.'
             )
         result = guild_table.query(
-            KeyConditionExpression=Key('guildOwner').eq(f'discord#{discord_user_data["id"]}') & Key('itemType').begins_with('guild#')
+            KeyConditionExpression=Key('guildOwner').eq(f"discord#{discord_user_data['id']}") & Key('itemType').begins_with('guild#')
         )
-        if len(result['Items']) != 0 and result['Items'][0]['itemType'] != f'guild#{guild["id"]}':
+        if len(result['Items']) != 0 and result['Items'][0]['itemType'] != f"guild#{guild['id']}":
             # bot leave old guild
             background_tasks.add_task(bot_leave_guild, result['Items'][0]['itemType'].split('#')[1])
             # create new guild item
             response = guild_table.put_item(Item={
-                'guildOwner': f'discord#{discord_user_data["id"]}',
-                'itemType': f'guild#{guild['id']}',
+                'guildOwner': f"discord#{discord_user_data['id']}",
+                'itemType': f"guild#{guild['id']}",
                 'clustersUserId': clusters_user_id,
                 'guild': guild,
                 'tierRole': {}
             })
             # delete old guild item
             response = guild_table.delete_item(Key={
-                'guildOwner': f'discord#{discord_user_data["id"]}',
-                'itemType': f'guild#{result["Items"][0]["itemType"]}'
+                'guildOwner': f"discord#{discord_user_data['id']}",
+                'itemType': f"guild#{result['Items'][0]['itemType']}"
             })
         elif len(result['Items']) !=0:
             # update guild item
             response = guild_table.update_item(
                 Key={
-                    'guildOwner': f'discord#{discord_user_data["id"]}',
-                    'itemType': f'guild#{guild['id']}',
+                    'guildOwner': f"discord#{discord_user_data['id']}",
+                    'itemType': f"guild#{guild['id']}",
                 },
                 UpdateExpression='SET #guild = :guild',
                 ExpressionAttributeNames={
@@ -161,8 +161,8 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
         else:
             # create new guild item
             response = guild_table.put_item(Item={
-                'guildOwner': f'discord#{discord_user_data["id"]}',
-                'itemType': f'guild#{guild['id']}',
+                'guildOwner': f"discord#{discord_user_data['id']}",
+                'itemType': f"guild#{guild['id']}",
                 'clustersUserId': clusters_user_id,
                 'guild': guild,
                 'tierRole': {}

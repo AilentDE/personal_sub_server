@@ -34,11 +34,11 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
     result = db.execute(stmt_creator).scalar_one_or_none()
     if result:
         mail_info = {
-            'creator_url': f'https://clusters.tw/profile/{result.userID}/works',
+            'creator_url': f"https://clusters.tw/profile/{result.userID}/works",
             'creator_name': result.displayName,
-            'work_url': f'https://clusters.tw/creator-posts/{work.id}',
-            'work_title': f'{work.title if work.title else "新作品"}',
-            'work_excerpt': f'{work.excerpt}',
+            'work_url': f"https://clusters.tw/creator-posts/{work.id}",
+            'work_title': f"{work.title if work.title else '新作品'}",
+            'work_excerpt': f"{work.excerpt}",
             'thumbnail_object': None,
             'thumbnail_URL': 'https://clusters-open-assets.s3.ap-northeast-1.amazonaws.com/default-work-cover.jpg'
         }

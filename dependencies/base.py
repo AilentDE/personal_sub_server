@@ -11,7 +11,7 @@ def get_template(template_file:str='templates/sample_template.txt')->str:
 
 def write_log(message: str, log_file:str='log.txt'):
     with open('logs/' + log_file, mode='a', encoding='utf-8') as log:
-        log.write(f'[{datetime.utcnow()}] ' + message)
+        log.write(f"[{datetime.utcnow()}] " + message)
 
 def check_hmac(
         creator_id: str = Path(..., description="creator_id from path"),

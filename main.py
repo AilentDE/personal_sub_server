@@ -75,7 +75,7 @@ async def validation_exception_handler(request: Request, exc: Exception):
       status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             'message': '輸入資料不正確',
-            'detail': f'{exc}'
+            'detail': f"{exc}"
         }
   )
 
@@ -83,7 +83,7 @@ async def validation_exception_handler(request: Request, exc: Exception):
 async def internal_exception_handler(request: Request, exc: Exception):
   raise HTTPException(
       status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-      detail= f'{exc}'
+      detail= f"{exc}"
   )
 
 # uvicorn main:app --reload

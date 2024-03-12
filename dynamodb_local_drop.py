@@ -21,14 +21,14 @@ def drop_table(dyn_resource=None):
     try:
         dyn_resource.delete_table(TableName=user_table_name)
     except Exception as err:
-        logging.error(f'{err}')
+        logging.error(f"{err}")
     
     # guild
     guild_table_name = "discordClusters-discordGuild"
     try:
         dyn_resource.delete_table(TableName=guild_table_name)
     except Exception as err:
-        logging.error(f'{err}')
+        logging.error(f"{err}")
     
     return 'Drop table finished.'
 

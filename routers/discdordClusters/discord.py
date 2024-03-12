@@ -19,17 +19,17 @@ router = APIRouter(
 async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payload: Annotated[dict, Depends(oauth_check)]):
     guild_table = dynamodb().table('discordClusters-discordGuild')
     result_guild = guild_table.query(
-        KeyConditionExpression=Key('guildOwner').eq(f'discord#{user_payload['secondaryUserId']}') & Key('itemType').begins_with('guild#')
+        KeyConditionExpression=Key('guildOwner').eq(f"discord#{user_payload['secondaryUserId']}") & Key('itemType').begins_with('guild#')
     )
 
     user_table = dynamodb().table('discordClusters-userData')
     result_user = user_table.query(
-        KeyConditionExpression = Key('accountType').eq(f'clusters#{user_payload['primaryUserId']}'),
+        KeyConditionExpression = Key('accountType').eq(f"clusters#{user_payload['primaryUserId']}"),
     )
     user_data = result_user['Items'][0]
 
     base_url = 'https://discord.com'
-    state = encode_base64(f'{user_payload['primaryUserId']}|{hash_sha1(user_data['email'])}')
+    state = encode_base64(f"{user_payload['primaryUserId']}|{hash_sha1(user_data['email'])}")
     params = {
         'response_type': 'code',
         'client_id': setting.discord_client,
@@ -40,7 +40,7 @@ async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payl
         'prompt': 'consent'
     }
     encoded_params = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
-    redirect_url = f'{base_url}/oauth2/authorize?' + encoded_params
+    redirect_url = f"{base_url}/oauth2/authorize?" + encoded_params
     
     if len(result_guild['Items']) == 0:
         return {
@@ -71,7 +71,7 @@ async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payl
 async def update_tier_role(user_payload: Annotated[dict, Depends(oauth_check)], tierRole: Annotated[dict, Body()]):
     guild_table = dynamodb().table('discordClusters-discordGuild')
     result_guild = guild_table.query(
-        KeyConditionExpression=Key('guildOwner').eq(f'discord#{user_payload['secondaryUserId']}') & Key('itemType').begins_with('guild#')
+        KeyConditionExpression=Key('guildOwner').eq(f"discord#{user_payload['secondaryUserId']}") & Key('itemType').begins_with('guild#')
     )
     if len(result_guild['Items']) == 0:
         raise HTTPException(
@@ -83,8 +83,8 @@ async def update_tier_role(user_payload: Annotated[dict, Depends(oauth_check)], 
 
     response = guild_table.update_item(
         Key={
-            'guildOwner': f'discord#{user_payload["secondaryUserId"]}',
-            'itemType': f'guild#{guild['id']}'
+            'guildOwner': f"discord#{user_payload['secondaryUserId']}",
+            'itemType': f"guild#{guild['id']}"
         },
         UpdateExpression='SET #tierRole = :tierRole',
         ExpressionAttributeNames={
