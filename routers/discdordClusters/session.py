@@ -16,7 +16,7 @@ router = APIRouter(
 
 @router.post('/signIn/{creator_id}')
 async def request_login_url(userData: Annotated[UserDataSchema, Body()], clusters_user_id: Annotated[str, Depends(check_hmac)]):
-    user_table = dynamodb().table('discordClusters-userData')
+    user_table = dynamodb().table(setting.dynamodb_table_user)
 
     result = user_table.query(
         KeyConditionExpression=Key('accountType').eq(f"clusters#{clusters_user_id}")
@@ -48,7 +48,7 @@ async def request_login_url(userData: Annotated[UserDataSchema, Body()], cluster
 
 @router.post('/clusters')
 async def sign_in_clusters_user(discord_oauth: Annotated[discordOauthSchema, Body()]):
-    user_table = dynamodb().table('discordClusters-userData')
+    user_table = dynamodb().table(setting.dynamodb_table_user)
 
     clusters_user_id, signature = decode_base64(discord_oauth.state).split('|')
     result = user_table.query(
@@ -74,7 +74,7 @@ async def sign_in_clusters_user(discord_oauth: Annotated[discordOauthSchema, Bod
 @router.post('/discord')
 async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth: Annotated[discordOauthSchema, Body()]):
     # user
-    user_table = dynamodb().table('discordClusters-userData')
+    user_table = dynamodb().table(setting.dynamodb_table_user)
 
     clusters_user_id, signature = decode_base64(discord_oauth.state).split('|')
     result = user_table.query(
@@ -115,7 +115,7 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
     
     # guild
     if 'guild' in discord.keys():
-        guild_table = dynamodb().table('discordClusters-discordGuild')
+        guild_table = dynamodb().table(setting.dynamodb_table_guild)
 
         guild = discord['guild']
         if guild['owner_id'] != discord_user_data["id"]:

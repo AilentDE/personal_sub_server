@@ -7,10 +7,11 @@ class dynamodb:
     def __init__(self) -> None:
         self.resource = boto3.resource(
             'dynamodb',
-            endpoint_url='http://localhost:8001',
-            aws_access_key_id = 'fake',
-            aws_secret_access_key = 'fake',
-            region_name='ap-northeast-1')
+            # endpoint_url='http://localhost:8001',
+            aws_access_key_id = setting.role_aws_key,
+            aws_secret_access_key = setting.role_aws_secret,
+            region_name=setting.region_name
+        )
 
     def table(self, table_name:str):
         table = self.resource.Table(table_name)

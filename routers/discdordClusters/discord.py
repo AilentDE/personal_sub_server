@@ -17,12 +17,12 @@ router = APIRouter(
 
 @router.get('/tierRole')
 async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payload: Annotated[dict, Depends(oauth_check)]):
-    guild_table = dynamodb().table('discordClusters-discordGuild')
+    guild_table = dynamodb().table(setting.dynamodb_table_guild)
     result_guild = guild_table.query(
         KeyConditionExpression=Key('guildOwner').eq(f"discord#{user_payload['secondaryUserId']}") & Key('itemType').begins_with('guild#')
     )
 
-    user_table = dynamodb().table('discordClusters-userData')
+    user_table = dynamodb().table(setting.dynamodb_table_user)
     result_user = user_table.query(
         KeyConditionExpression = Key('accountType').eq(f"clusters#{user_payload['primaryUserId']}"),
     )
@@ -69,7 +69,7 @@ async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payl
     
 @router.put('/tierRole')
 async def update_tier_role(user_payload: Annotated[dict, Depends(oauth_check)], tierRole: Annotated[dict, Body()]):
-    guild_table = dynamodb().table('discordClusters-discordGuild')
+    guild_table = dynamodb().table(setting.dynamodb_table_guild)
     result_guild = guild_table.query(
         KeyConditionExpression=Key('guildOwner').eq(f"discord#{user_payload['secondaryUserId']}") & Key('itemType').begins_with('guild#')
     )

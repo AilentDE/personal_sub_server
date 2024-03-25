@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     bot_token: str = os.getenv('BOT_TOKEN')
     secret_key: str = os.getenv('SECRET_KEY')
     algorithm: str = os.getenv('ALGORITHM')
+    dynamodb_table_user: str = os.getenv('DYNAMODB_TABLE_USER')
+    dynamodb_table_guild: str = os.getenv('DYNAMODB_TABLE_GUILD')
 
     # Cancel this if AWS Lambda Enviroment:
     model_config = SettingsConfigDict(env_file=".env")
