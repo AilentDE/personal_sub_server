@@ -7,7 +7,7 @@ router = APIRouter(
     prefix='/csrfToken'
 )
 
-@router.get('/')
+@router.get('')
 async def get_csrf_token(csrf_protect:CsrfProtect = Depends()):
 	# csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
 	# response = JSONResponse(status_code=200, content={'csrf_token': csrf_token})
