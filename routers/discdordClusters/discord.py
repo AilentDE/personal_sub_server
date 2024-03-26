@@ -51,6 +51,23 @@ async def get_tier_role_table(db: Annotated[Session, Depends(get_db)], user_payl
             "tierRole": {}
         }
     else:
+        # 處理非主clusters帳號綁discord guild
+        if user_payload['primaryUserId'] not in result_guild['Items'][0]['clustersUserIds']:
+            response = guild_table.update_item(
+                Key={
+                    'guildOwner': result_guild['Items'][0]['guildOwner'],
+                    'itemType': result_guild['Items'][0]['itemType'],
+                },
+                UpdateExpression='SET #clustersUserIds = :clustersUserIds',
+                ExpressionAttributeNames={
+                    '#clustersUserIds': 'clustersUserIds'
+                },
+                ExpressionAttributeValues={
+                    ':clustersUserIds': [*result_guild['Items'][0]['clustersUserIds'], user_payload['primaryUserId']]
+                },
+                ReturnValues='UPDATED_NEW'
+            )
+        
         stmt = select(Tier).where(
             Tier.creatorID == user_payload['primaryUserId'],
             Tier.IsDelete == False

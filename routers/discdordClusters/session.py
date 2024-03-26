@@ -74,6 +74,7 @@ async def sign_in_clusters_user(discord_oauth: Annotated[discordOauthSchema, Bod
 @router.post('/discord')
 async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth: Annotated[discordOauthSchema, Body()]):
     # user
+    ## clusters user
     user_table = dynamodb().table(setting.dynamodb_table_user)
 
     clusters_user_id, signature = decode_base64(discord_oauth.state).split('|')
@@ -91,27 +92,28 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Signature validation failed.'
         )
-
+    update_clusters_user_data = clusters_user_data.copy()
+    del update_clusters_user_data['accountType'], update_clusters_user_data['bindAccount']
+    ## discord user
     discord = exchange_token(discord_oauth.code)
     discord_user_data = get_discord_user_data(discord['access_token'])
-    response = user_table.put_item(Item={
-        'accountType': f"discord#{discord_user_data['id']}",
-        'bindAccount': f"clusters#{clusters_user_id}",
-        **discord_user_data
-    })
-    null_data = list(filter(lambda x: "#null" in x["bindAccount"], result['Items']))
-    if len(null_data) !=0:
-        update_clusters_user_data = clusters_user_data.copy()
-        del update_clusters_user_data['accountType'], update_clusters_user_data['bindAccount']
-        response = user_table.put_item(Item={
+    
+    with user_table.batch_writer() as batch:
+        batch.put_item(Item={
+            'accountType': f"discord#{discord_user_data['id']}",
+            'bindAccount': f"clusters#{clusters_user_id}",
+            **discord_user_data
+        })
+        batch.put_item(Item={
             'accountType': f"clusters#{clusters_user_id}",
             'bindAccount': f"discord#{discord_user_data['id']}",
             **update_clusters_user_data
         })
-        response = user_table.delete_item(Key={
-            'accountType': f"clusters#{clusters_user_id}",
-            'bindAccount': 'discord#null'
-        })
+        if result['Items'][0]['bindAccount'] != f"discord#{discord_user_data['id']}":
+            batch.delete_item(Key={
+                'accountType': result['Items'][0]['accountType'],
+                'bindAccount': result['Items'][0]['bindAccount']
+            })
     
     # guild
     if 'guild' in discord.keys():
@@ -129,32 +131,36 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
         if len(result['Items']) != 0 and result['Items'][0]['itemType'] != f"guild#{guild['id']}":
             # bot leave old guild
             background_tasks.add_task(bot_leave_guild, result['Items'][0]['itemType'].split('#')[1])
-            # create new guild item
-            response = guild_table.put_item(Item={
-                'guildOwner': f"discord#{discord_user_data['id']}",
-                'itemType': f"guild#{guild['id']}",
-                'clustersUserId': clusters_user_id,
-                'guild': guild,
-                'tierRole': {}
-            })
-            # delete old guild item
-            response = guild_table.delete_item(Key={
-                'guildOwner': f"discord#{discord_user_data['id']}",
-                'itemType': result['Items'][0]['itemType']
-            })
+            with guild_table.batch_writer() as batch:
+                # create new guild item
+                batch.put_item(Item={
+                    'guildOwner': f"discord#{discord_user_data['id']}",
+                    'itemType': f"guild#{guild['id']}",
+                    'clustersUserIds': [clusters_user_id],
+                    'guild': guild,
+                    'tierRole': {}
+                })
+                # delete old guild item
+                batch.delete_item(Key={
+                    'guildOwner': result['Items'][0]['guildOwner'],
+                    'itemType': result['Items'][0]['itemType']
+                })
         elif len(result['Items']) !=0:
             # update guild item
+            clusters_user_ids = result['Items'][0]['clustersUserIds'] if clusters_user_id in result['Items'][0]['clustersUserIds'] else [*result['Items'][0]['clustersUserIds'], clusters_user_id]
             response = guild_table.update_item(
                 Key={
                     'guildOwner': f"discord#{discord_user_data['id']}",
                     'itemType': f"guild#{guild['id']}",
                 },
-                UpdateExpression='SET #guild = :guild',
+                UpdateExpression='SET #guild = :guild, #clustersUserIds = :clustersUserIds',
                 ExpressionAttributeNames={
-                    '#guild': 'guild'
+                    '#guild': 'guild',
+                    '#clustersUserIds': 'clustersUserIds'
                 },
                 ExpressionAttributeValues={
-                    ':guild': guild
+                    ':guild': guild,
+                    ':clustersUserIds': clusters_user_id
                 },
                 ReturnValues='UPDATED_NEW'
             )
@@ -163,7 +169,7 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
             response = guild_table.put_item(Item={
                 'guildOwner': f"discord#{discord_user_data['id']}",
                 'itemType': f"guild#{guild['id']}",
-                'clustersUserId': clusters_user_id,
+                'clustersUserIds': [clusters_user_id],
                 'guild': guild,
                 'tierRole': {}
             })
