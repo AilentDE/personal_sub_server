@@ -140,7 +140,7 @@ async def sign_in_discord_user(background_tasks: BackgroundTasks, discord_oauth:
             # delete old guild item
             response = guild_table.delete_item(Key={
                 'guildOwner': f"discord#{discord_user_data['id']}",
-                'itemType': f"guild#{result['Items'][0]['itemType']}"
+                'itemType': result['Items'][0]['itemType']
             })
         elif len(result['Items']) !=0:
             # update guild item
