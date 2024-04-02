@@ -16,7 +16,7 @@ class UserDataSchema(BaseModel):
     creatorFields: List[str]
     dateOfBirth: str|None
     createdAt: str # DynamoDB not support datetime type
-    lastSignedInAt: str # DynamoDB not support datetime type
+    lastSignedInAt: str|None # DynamoDB not support datetime type
     socialMediaHandles: Dict[str, str]|List|None
     externalUrl: List[str]
     isGovIdVerified: str|None
