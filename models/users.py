@@ -28,3 +28,5 @@ class UserData(Base):
     balance = Column(Integer)
     isDisable = Column(Boolean)
     creditNo = Column(String(4))
+    updateTime = Column(DateTime)
+    isPostNotified = Column(Boolean)

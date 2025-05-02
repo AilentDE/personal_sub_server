@@ -84,7 +84,8 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
             UserSubscription.subscription_Year == tw_datetime.strftime('%Y'),
             UserSubscription.subscription_Month == tw_datetime.strftime('%m'),
             UserSubscription.IsPay == True,
-            UserSubscription.cancelUser.is_(None)
+            UserSubscription.cancelUser.is_(None),
+            UserData.isPostNotified == True
             ).order_by(UserSubscription.userID.asc())
         results = db.execute(stmt).scalars().all()
         results = list(map(lambda x: {'user_email': x.email, 'user_name': x.displayName}, results))
