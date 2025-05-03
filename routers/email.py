@@ -87,6 +87,9 @@ async def when_create_work(background_tasks: BackgroundTasks, db: Annotated[Sess
             UserSubscription.cancelUser.is_(None),
             UserData.isPostNotified == True
             ).order_by(UserSubscription.userID.asc())
+        # R18作品通知設定
+        if work.isNsfw:
+            stmt = stmt.where(UserData.showNSFW == True)
         results = db.execute(stmt).scalars().all()
         results = list(map(lambda x: {'user_email': x.email, 'user_name': x.displayName}, results))
         results = [dict(t) for t in set([tuple(d.items()) for d in results])]
